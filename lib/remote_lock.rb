@@ -3,8 +3,9 @@ class RemoteLock
 
   DEFAULT_OPTIONS = {
     :initial_wait => 10e-3, # seconds -- first soft fail will wait for 10ms
-    :expiry       => 60,    # seconds
+    :expiry       => 60,    # lock expiring time in seconds
     :retries      => 11,    # these defaults will retry for a total 41sec max
+    :timeout      => 60     # timeout to acquire the lock
   }
 
   def initialize(adapter, prefix = nil)
@@ -28,11 +29,14 @@ class RemoteLock
 
   def acquire_lock(key, options = {})
     options = DEFAULT_OPTIONS.merge(options)
+    timeout_at = Time.now + options[:timeout]
     1.upto(options[:retries]) do |attempt|
       success = @adapter.store(key_for(key), options[:expiry])
       return if success
       break if attempt == options[:retries]
-      Kernel.sleep(2 ** (attempt + rand - 1) * options[:initial_wait])
+      break if Time.now >= timeout_at
+      wait_time = options[:wait_time] || (2 ** (attempt + rand - 1) * options[:initial_wait])
+      Kernel.sleep(wait_time)
     end
     raise RemoteLock::Error, "Couldn't acquire lock for: #{key}"
   end

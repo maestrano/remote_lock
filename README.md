@@ -63,13 +63,30 @@ Options:
   $lock.synchronize("my-key", retries: 5) do ... end
   ```
 
-* Tries interval
+* Initial wait time
 
-  You can customize the interval between tries, initially it's 10ms:
+  You can customize the initial wait time, defaults to 10ms:
 
   ```ruby
   $lock.synchronize("my-key", initial_wait: 10e-3) do ... end
   ```
+
+* Tries interval
+
+  You can customize the interval waiting time, by defaults it ramps up following the formula: `2 ** (attempt + rand - 1) * initial_wait`
+
+  ```ruby
+  $lock.synchronize("my-key", wait_time: 0.1) do ... end
+  ```
+
+* Timeout
+
+  Force fail after specified timeout, defaults to 60 seconds
+
+  ```ruby
+  $lock.synchronize("my-key", wait_time: 0.1) do ... end
+  ```
+
 
 For more info, see lib/remote_lock.rb. It's very straightforward to read.
 
